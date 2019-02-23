@@ -1,3 +1,12 @@
+**/tags
+tags
+**/data/
+*.tb
+*.pth.tar
+**/tb/
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
