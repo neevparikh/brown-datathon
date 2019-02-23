@@ -3,125 +3,55 @@ import numpy as np
 import os
 import preproc
 from PIL import Image
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import logging
 import torch
 import math
 import shutil
 import dill
 
-data_path = os.path.join('..', '..', 'data')
+data_path = os.path.join('data')
 train_root_dir = os.path.join(data_path, 'train')
 test_root_dir = os.path.join(data_path, 'test')
-save_path = os.path.join(data_path, 'image_stats.npz')
-indexes_file = os.path.join(data_path, 'indexes.npy')
-num_folds = 5
+blacklist = defaultdict(list)
+blacklist[os.path.join(train_root_dir, 'fruit_fly_volumes.npz')] = [14, 74]
 
-image_stats = np.load(save_path)
-avg = float(image_stats['avg'])
-std = float(image_stats['std'])
 
-def to_categorical(y, num_classes=None, dtype='float32'):
-    """Converts a class vector (integers) to binary class matrix.
-    E.g. for use with categorical_crossentropy.
-    # Arguments
-        y: class vector to be converted into a matrix
-            (integers from 0 to num_classes).
-        num_classes: total number of classes.
-        dtype: The data type expected by the input, as a string
-            (`float32`, `float64`, `int32`...)
-    # Returns
-        A binary matrix representation of the input. The classes axis
-        is placed last.
-    # Example
-    ```python
-    # Consider an array of 5 labels out of a set of 3 classes {0, 1, 2}:
-    > labels
-    array([0, 2, 1, 2, 0])
-    # `to_categorical` converts this into a matrix with as many
-    # columns as there are classes. The number of rows
-    # stays the same.
-    > to_categorical(labels)
-    array([[ 1.,  0.,  0.],
-           [ 0.,  0.,  1.],
-           [ 0.,  1.,  0.],
-           [ 0.,  0.,  1.],
-           [ 1.,  0.,  0.]], dtype=float32)
-    ```
-    """
+class NeuronDataset(Dataset):
+    def __init__(self, root_dir, transform_norm, transform_img=None, transform_both=None):
+        self.samples = []
+        for path in list(map(lambda f : os.path.join(root_dir, f), os.listdir(root_dir))):
+            data = np.load(path)
+            d_blacklist = blacklist[path]
+            for i in range(data['volume'].shape[0]):
+                if i not in d_blacklist:
+                    self.samples.append((data, i))
 
-    y = np.array(y, dtype='int')
-    input_shape = y.shape
-    if input_shape and input_shape[-1] == 1 and len(input_shape) > 1:
-        input_shape = tuple(input_shape[:-1])
-    y = y.ravel()
-    if not num_classes:
-        num_classes = np.max(y) + 1
-    n = y.shape[0]
-    categorical = np.zeros((n, num_classes), dtype=dtype)
-    categorical[np.arange(n), y] = 1
-    output_shape = input_shape + (num_classes,)
-    categorical = np.reshape(categorical, output_shape)
-    return categorical
-
-class SceneDataset(Dataset):
-    def __init__(self, root_dir, index, transform=None):
-        paths = list(map(lambda f : os.path.join(root_dir, f), os.listdir(root_dir)))
-        self.items = index(sum([[(os.path.join(p, i_p), i) for i_p in os.listdir(p)] 
-            for i, p in enumerate(paths)], [])) 
-        self.shape = (256, 256)
-        self.num_classes = len(paths)
-        self.transform = transform
+        self.transform_img = transform_img
+        self.transform_both = transform_both
+        self.transform_norm = transform_norm
+        self.shape = (preproc.img_size, preproc.img_size)
     
     def __len__(self):
-        return len(self.items)
+        return len(self.samples)
 
     def __getitem__(self, i):
-        p, label = self.items[i]
-        img = Image.open(p)
-        if self.transform:
-            img = self.transform(img)
-        return (img, torch.tensor(int(label)))
+        index = self.samples[i][1]
+        img = self.samples[i][0]['volume'][index]
+        label = self.samples[i][0]['label'][index]
+        if self.transform_both:
+            img_label = np.array(self.transform_both(np.stack((img, label), axis=-1)))
+            img = Image.fromarray(img_label[:,:,0])
+            label = Image.fromarray(img_label[:,:,1])
+        if self.transform_img:
+            img = self.transform_img(img)
+        img_label = self.transform_norm(Image.fromarray(np.stack((img, label), axis=-1)))
+        return img_label
 
-def get_image_stats_scene(seed):
-    np.random.seed(seed)
-    scene_data = SceneDataset(train_root_dir, lambda x : x)
-    #images are grey scale
-    var = 0
-    avg = 0
-    min_dim_x = 1e10
-    min_dim_y = 1e10
-    for i in range(len(scene_data)):
-        img = np.array(scene_data[i][0]).astype(np.float32) / 255.
-        d_x, d_y = img.shape
-        if d_x < min_dim_x:
-            min_dim_x = d_x
-        if d_y < min_dim_y:
-            min_dim_y = d_y
-        var += np.var(img) / len(scene_data)
-        avg += np.average(img) / len(scene_data)
-    std = np.sqrt(var)
-    print("std:", std, "avg:", avg, "min_dim:", (min_dim_x, min_dim_y))
-    np.savez(save_path, std=std, avg=avg)
-    indexes = np.arange(len(scene_data))
-    np.random.shuffle(indexes)
-    np.save(indexes_file, indexes)
-
-def get_data(data_path, fold, cutout_prob, min_erase_area, max_erase_area, min_erase_aspect_ratio,
-        max_erase_regions):
-    indexes = np.load(indexes_file)
-    assert fold >= 0 and fold < num_folds
-    fold_start = round(indexes.shape[0] * fold / num_folds)
-    fold_middle = round(indexes.shape[0] * (fold + 1) / num_folds)
-    trn_indexes = np.concatenate((indexes[:fold_start], indexes[fold_middle:]))
-    val_indexes = indexes[fold_start:fold_middle]
-    indexer = lambda indexes : lambda x : np.array(x)[indexes]
-    trn_transform, val_transform = preproc.data_transforms(cutout_prob, min_erase_area, 
-            max_erase_area, min_erase_aspect_ratio, max_erase_regions, avg, std)
-    trn_data = SceneDataset(root_dir=train_root_dir, index=indexer(trn_indexes), transform=trn_transform)
-    val_data = SceneDataset(root_dir=train_root_dir, index=indexer(val_indexes), transform=val_transform)
-
-    num_classes = trn_data.num_classes
+def get_data():
+    train_general_transform, train_img_transform, norm_transform = preproc.data_transforms()
+    trn_data = NeuronDataset(root_dir=train_root_dir, transform_norm=norm_transform, 
+            transform_img=train_img_transform, transform_both=train_general_transform)
 
     #shape is HW or HWC
     shape = trn_data.shape
@@ -129,8 +59,8 @@ def get_data(data_path, fold, cutout_prob, min_erase_area, max_erase_area, min_e
     assert shape[0] == shape[1], "not expected shape = {}".format(shape)
     input_size = shape[0]
 
-    return [{'input_size': input_size, 'input_channels': input_channels, 'num_classes': num_classes}, trn_data,
-            val_data]
+    return [{'input_size': input_size, 'input_channels': input_channels, 'num_classes': 2}, 
+            trn_data]
 
 def get_logger(file_path):
     """ Make python logger """
@@ -175,27 +105,22 @@ class AverageMeter():
         self.count += n
         self.avg = self.sum / self.count
 
+def iou(pred, target, n_classes = 12):
+    ious = []
+    pred = pred.view(-1)
+    target = target.view(-1)
 
-def accuracy(output, target, topk=(1,)):
-    """ Computes the precision@k for the specified values of k """
-    maxk = max(topk)
-    batch_size = target.size(0)
-
-    _, pred = output.topk(maxk, 1, True, True)
-    pred = pred.t()
-    # one-hot case
-    if target.ndimension() > 1:
-        target = target.max(1)[1]
-
-    correct = pred.eq(target.view(1, -1).expand_as(pred))
-
-    res = []
-    for k in topk:
-        correct_k = correct[:k].view(-1).float().sum(0)
-        res.append(correct_k.mul_(1.0 / batch_size))
-
-    return res
-
+    # Ignore IoU for background class ("0")
+    for cls in xrange(1, n_classes):  # This goes from 1:n_classes-1 -> class "0" is ignored
+        pred_inds = pred == cls
+        target_inds = target == cls
+        intersection = (pred_inds[target_inds]).long().sum().data.cpu()[0]  # Cast to long to prevent overflows
+        union = pred_inds.long().sum().data.cpu()[0] + target_inds.long().sum().data.cpu()[0] - intersection
+        if union == 0:
+            ious.append(float('nan'))  # If there is no ground truth, do not include in evaluation
+        else:
+            ious.append(float(intersection) / float(max(union, 1)))
+    return np.array(ious)
 
 def save_item(item, f_dir, names):
     filename = os.path.join(f_dir, names[0]+'.pth.tar')

@@ -39,26 +39,16 @@ class Config(argparse.Namespace):
         parser.add_argument('--w_weight_decay', type=float, default=3e-1)
         parser.add_argument('--w_weight_decay_end', type=float, default=3e-4,
                 help='final weight decay, only used for wd finder')
-        parser.add_argument('--total_channels_to_add', type=int, default=100,
-                help='# of channels to add to net in total')
-        parser.add_argument('--num_layers', type=int, default=130,
-                help='# of channels to add to net in total')
-        parser.add_argument('--dropout', type=float, default=0.2,
-                help='drop out probability on classification layer')
-        parser.add_argument('--cutout_prob', type=float, default=0.5,
-                help='probability of using cutout')
-        parser.add_argument('--min_erase_area', type=float, default=0.08,
-                help='minimum size of image cutout')
-        parser.add_argument('--max_erase_area', type=float, default=0.7,
-                help='maximum size of image cutout')
-        parser.add_argument('--min_erase_aspect_ratio', type=float, default=0.3,
-                help='minimum aspect ratio of image cutout')
-        parser.add_argument('--max_erase_regions', type=int, default=6,
-                help='maximum number of different regions to erase')
-        parser.add_argument('--shake_drop', action='store_true', default=False, 
-                help='use shake drop')
-        parser.add_argument('--no_se', action='store_true', default=False, 
-                help='no squeeze excitation')
+        #parser.add_argument('--total_channels_to_add', type=int, default=100,
+        #        help='# of channels to add to net in total')
+        #parser.add_argument('--num_layers', type=int, default=130,
+        #        help='# of channels to add to net in total')
+        #parser.add_argument('--dropout', type=float, default=0.2,
+        #        help='drop out probability on classification layer')
+        #parser.add_argument('--shake_drop', action='store_true', default=False, 
+        #        help='use shake drop')
+        #parser.add_argument('--no_se', action='store_true', default=False, 
+        #        help='no squeeze excitation')
         parser.add_argument('--lr_finder', action='store_true', default=False, 
                 help='find lr using exp lr finder')
         parser.add_argument('--wd_finder', action='store_true', default=False, 

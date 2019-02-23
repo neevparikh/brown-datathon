@@ -8,7 +8,7 @@ import utils
 from optim.adam import Adam
 import shutil
 import copy
-from models import se_pyramid_net
+from models.unet.unet_model import UNet
 
 def start_run():
     config = Config()
@@ -46,14 +46,10 @@ def start_run():
 
     torch.backends.cudnn.benchmark = True
 
-    # get data with meta info
-    data_params, train_data, valid_data = utils.get_data(config.data_path, config.fold, 
-            config.cutout_prob, config.min_erase_area, config.max_erase_area, config.min_erase_aspect_ratio,
-            config.max_erase_regions)
+    #TODO: fix folds/cv
+    data_params, train_data = utils.get_data()
 
-    model = se_pyramid_net.ShakePyramidNet(config.num_layers, config.total_channels_to_add, 
-            data_params['num_classes'], data_params['input_channels'], config.shake_drop, not config.no_se,
-            config.dropout)
+    model = UNet(data_params['input_channels'], data_params['num_classes'])
 
     model = model.to(device)
 
@@ -64,11 +60,11 @@ def start_run():
                                                shuffle=True,
                                                num_workers=config.workers,
                                                pin_memory=True)
-    valid_loader = torch.utils.data.DataLoader(valid_data,
-                                               batch_size=config.batch_size,
-                                               shuffle=False,
-                                               num_workers=config.workers,
-                                               pin_memory=True)
+    # valid_loader = torch.utils.data.DataLoader(valid_data,
+    #                                            batch_size=config.batch_size,
+    #                                            shuffle=False,
+    #                                            num_workers=config.workers,
+    #                                            pin_memory=True)
 
     nb_iters_train = config.epochs * len(train_loader)
 
@@ -98,18 +94,18 @@ def start_run():
         cur_step = train(train_loader, model, w_optim, epoch, writer, device, config, logger, cur_step)
 
         # validation
-        top1 = validate(valid_loader, model, epoch, cur_step, writer, device, config, logger)
+        #top1 = validate(valid_loader, model, epoch, cur_step, writer, device, config, logger)
 
         saves = ['checkpoint']
-        is_best = best_top1 < top1
-        # save
-        if is_best:
-            best_top1 = top1
-            saves.append('best')
+        #is_best = best_top1 < top1
+        ## save
+        #if is_best:
+        #    best_top1 = top1
+        #    saves.append('best')
         utils.save_item(model, config.path, saves)
         print("")
 
-    logger.info("Final best Prec@1 = {:.4%}".format(best_top1))
+    #logger.info("Final best Prec@1 = {:.4%}".format(best_top1))
 
 def train(train_loader, model, w_optim, epoch, writer, device, config, logger, cur_step):
     top1 = utils.AverageMeter()
@@ -118,10 +114,15 @@ def train(train_loader, model, w_optim, epoch, writer, device, config, logger, c
 
     initial_step = copy.deepcopy(cur_step)
 
-    for step, (trn_X, trn_y) in enumerate(train_loader):
+    for step, trn_d in enumerate(train_loader):
         model.train()
 
-        trn_X, trn_y = trn_X.to(device, non_blocking=True), trn_y.to(device, non_blocking=True)
+        trn_d = trn_d.to(device, non_blocking=True)
+        trn_X = trn_d[:,0]
+        trn_y = trn_d[:,1]
+        reshape = lambda x : x.reshape(x.size(0), 1, x.size(1), x.size(2))
+        trn_X = reshape(trn_X)
+        trn_y = reshape(trn_y)
         N = trn_X.size(0)
 
         logits_w = model(trn_X)

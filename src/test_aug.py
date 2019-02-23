@@ -4,15 +4,16 @@ import numpy as np
 import utils
 
 def display_images(loader, nb_imgs):
-    for (img, _), _ in zip(loader, range(nb_imgs)):
-        img = np.squeeze(img.detach().cpu().numpy())
-        plt.imshow(img)
+    for img_label, _ in zip(loader, range(nb_imgs)):
+        img_label = np.squeeze(img_label.detach().cpu().numpy())
         plt.gray()
+        fig = plt.subplot(1,2,1)
+        fig.imshow(img_label[0])
+        fig = plt.subplot(1,2,2)
+        fig.imshow(img_label[1])
         plt.show()
 
 if __name__ == '__main__':
-    config = Config()
-    _, loader, _ = utils.get_data(config.data_path, config.fold, config.cutout_prob, config.min_erase_area, 
-            config.max_erase_area, config.min_erase_aspect_ratio, config.max_erase_regions)
+    _, loader = utils.get_data()
     nb_imgs = 15
     display_images(loader, nb_imgs)
