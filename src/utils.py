@@ -119,7 +119,7 @@ def iou(pred, target, n_classes=12):
         union = pred_inds.long().sum().data.cpu().item() + target_inds.long().sum().data.cpu().item() - \
                 intersection
         if union == 0:
-            ious.append(float('nan'))  # If there is no ground truth, do not include in evaluation
+            ious.append(0.)  # If there is no ground truth, do not include in evaluation
         else:
             ious.append(float(intersection) / float(max(union, 1)))
     return np.average(ious)
