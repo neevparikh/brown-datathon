@@ -1,8 +1,8 @@
 # full assembly of the sub-parts to form the complete net
 
 import torch.nn.functional as F
-
 from .unet_parts import *
+from .custom_loss import lovasz_hinge
 
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes):
@@ -30,3 +30,6 @@ class UNet(nn.Module):
         x = self.up4(x, x1)
         x = self.outc(x)
         return F.sigmoid(x)
+
+    def loss(self, logits, target):
+        return lovasz_hinge(logits, target)

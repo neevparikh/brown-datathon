@@ -18,7 +18,7 @@ blacklist[os.path.join(train_root_dir, 'fruit_fly_volumes.npz')] = [14, 74]
 
 
 class NeuronDataset(Dataset):
-    def __init__(self, root_dir,  transform_img=None, transform_both=None, transform_norm=None):
+    def __init__(self, root_dir, transform_norm, transform_img=None, transform_both=None):
         self.samples = []
         for path in list(map(lambda f : os.path.join(root_dir, f), os.listdir(root_dir))):
             data = np.load(path)
@@ -45,16 +45,13 @@ class NeuronDataset(Dataset):
             label = Image.fromarray(img_label[:,:,1])
         if self.transform_img:
             img = self.transform_img(img)
-        if self.transform_norm:
-            img_label = self.transform_norm(Image.fromarray(np.stack((img, label), axis=-1)))
-            img = img_label[0]
-            label = img_label[1]
-        return (img, label)
+        img_label = self.transform_norm(Image.fromarray(np.stack((img, label), axis=-1)))
+        return img_label
 
 def get_data():
     train_general_transform, train_img_transform, norm_transform = preproc.data_transforms()
-    trn_data = NeuronDataset(root_dir=train_root_dir, transform_img=train_img_transform, 
-            transform_both=train_general_transform, transform_norm=norm_transform)
+    trn_data = NeuronDataset(root_dir=train_root_dir, transform_norm=norm_transform, 
+            transform_img=train_img_transform, transform_both=train_general_transform)
 
     #shape is HW or HWC
     shape = trn_data.shape

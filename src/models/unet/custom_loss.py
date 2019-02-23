@@ -6,14 +6,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def dice_loss(pred,target):
+
+def dice_loss(pred, target):
     smooth = 1.
 
     pred = pred.view(-1)
     target = target.view(-1)
     intersection = (pred * target).sum()
 
-    return 1 - ((2. * intersection + smooth) / (pred.sum() + target.sum() + smooth)
+    return 1 - ((2. * intersection + smooth) / (pred.sum() + target.sum() + smooth))
+
 def lovasz_grad(gt_sorted):
     p = len(gt_sorted)
     gts = gt_sorted.sum()
@@ -51,7 +53,8 @@ def lovasz_hinge(logits, labels, per_image=True, ignore=None):
       ignore: void class id
     """
     if per_image:
-        loss = mean(lovasz_hinge_flat(*flatten_binary_scores(log.unsqueeze(0), lab.unsqueeze(0), ignore))
+        loss = mean(lovasz_hinge_flat(*flatten_binary_scores(log.unsqueeze(0), 
+            lab.unsqueeze(0), ignore))
                           for log, lab in zip(logits, labels))
     else:
         loss = lovasz_hinge_flat(*flatten_binary_scores(logits, labels, ignore))
