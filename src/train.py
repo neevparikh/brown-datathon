@@ -125,12 +125,17 @@ def train(train_loader, model, w_optim, epoch, writer, device, config, logger, c
         trn_y = reshape(trn_y)
         N = trn_X.size(0)
 
+        print("Shape:", trn_X.size())
+        print("Shape:", trn_y.size())
+
         logits_w = model(trn_X)
+        print("Shape:", logits_w.size())
+
         loss = model.loss(logits_w, trn_y)
         w_grads = torch.autograd.grad(loss, w_optim.params())
         w_optim.step(w_grads)
 
-        prec1, prec5 = model.top_k(logits_w, trn_y, (1, 5))
+        prec1, prec5 = model.iou(logits_w, trn_y, (1, 5))
         losses.update(loss.item(), N)
         top1.update(prec1.item(), N)
         top5.update(prec5.item(), N)
