@@ -59,7 +59,7 @@ def get_data():
     assert shape[0] == shape[1], "not expected shape = {}".format(shape)
     input_size = shape[0]
 
-    return [{'input_size': input_size, 'input_channels': input_channels, 'num_classes': 2}, 
+    return [{'input_size': input_size, 'input_channels': input_channels, 'num_classes': 1}, 
             trn_data]
 
 def get_logger(file_path):

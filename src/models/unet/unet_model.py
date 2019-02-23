@@ -31,5 +31,7 @@ class UNet(nn.Module):
         x = self.outc(x)
         return F.sigmoid(x)
 
-    def loss(self, logits, target):
+    def loss(self, pred, target):
         return lovasz_hinge(logits, target)
+
+    def iou(self, pred, target):
