@@ -36,4 +36,4 @@ class UNet(nn.Module):
         return lovasz_hinge(pred, target)
 
     def iou(self, pred, target):
-        return iou(pred.contiguous(), target.contiguous())
+        return iou(pred.contiguous(), target.contiguous(), n_classes=1)

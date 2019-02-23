@@ -107,17 +107,19 @@ class AverageMeter():
 
 def iou(pred, target, n_classes=12):
     ious = []
-    pred = pred.view(-1)
-    target = target.view(-1)
+    pred = torch.round(pred.view(-1)).long()
+    target = torch.round(target.view(-1)).long()
 
     # Ignore IoU for background class ("0")
-    for cls in range(1, n_classes):  # This goes from 1:n_classes-1 -> class "0" is ignored
-        pred_inds = pred == cls
-        target_inds = target == cls
+    for cls in range(0, n_classes):  # This goes from 1:n_classes-1 -> class "0" is ignored
+
+        pred_inds = pred == (cls + 1)
+        target_inds = target == (cls + 1)
         # Cast to long to prevent overflows       
         intersection = (pred_inds[target_inds]).long().sum().data.cpu().item()  
         union = pred_inds.long().sum().data.cpu().item() + target_inds.long().sum().data.cpu().item() - \
                 intersection
+
         if union == 0:
             ious.append(0.)  # If there is no ground truth, do not include in evaluation
         else:
