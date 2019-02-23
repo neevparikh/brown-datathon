@@ -166,7 +166,7 @@ def train(train_loader, model, w_optim, epoch, writer, device, config, logger, c
 
         cur_step += 1
 
-    logger.info("Train: [{:2d}/{}] Final Prec@1 {:.4%}".format(epoch+1, config.epochs, iou.avg))
+    logger.info("Train: [{:2d}/{}] Final iou {:.4%}".format(epoch+1, config.epochs, iou.avg))
 
     return cur_step
 
