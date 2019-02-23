@@ -1,3 +1,9 @@
+"""
+This is a visualization file to view the dataset images
+Uncomment the first two lines to use it on MacOS. 
+"""
+#import matplotlib
+#matplotlib.use('TkAgg') 
 import numpy as np
 from numpy import load
 from matplotlib import pyplot as plt
