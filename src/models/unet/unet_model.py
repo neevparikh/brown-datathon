@@ -3,6 +3,7 @@
 import torch.nn.functional as F
 from .unet_parts import *
 from .custom_loss import lovasz_hinge
+from utils import iou
 
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes):
@@ -32,6 +33,7 @@ class UNet(nn.Module):
         return F.sigmoid(x)
 
     def loss(self, pred, target):
-        return lovasz_hinge(logits, target)
+        return lovasz_hinge(pred, target)
 
     def iou(self, pred, target):
+        return iou(pred.contiguous(), target.contiguous())

@@ -87,29 +87,28 @@ def start_run():
                    weight_decay=weight_decay)
 
     cur_step = 0
-    best_top1 = 0.
+    best_iou = 0.
 
     # training loop
     for epoch in range(config.epochs):
         cur_step = train(train_loader, model, w_optim, epoch, writer, device, config, logger, cur_step)
 
         # validation
-        #top1 = validate(valid_loader, model, epoch, cur_step, writer, device, config, logger)
+        #total_iou = validate(valid_loader, model, epoch, cur_step, writer, device, config, logger)
 
         saves = ['checkpoint']
-        #is_best = best_top1 < top1
+        #is_best = best_iou < total_iou
         ## save
         #if is_best:
-        #    best_top1 = top1
+        #    best_iou = iou
         #    saves.append('best')
         utils.save_item(model, config.path, saves)
         print("")
 
-    #logger.info("Final best Prec@1 = {:.4%}".format(best_top1))
+    #logger.info("Final best iou = {:.4%}".format(best_iou))
 
 def train(train_loader, model, w_optim, epoch, writer, device, config, logger, cur_step):
-    top1 = utils.AverageMeter()
-    top5 = utils.AverageMeter()
+    iou = utils.AverageMeter()
     losses = utils.AverageMeter()
 
     initial_step = copy.deepcopy(cur_step)
@@ -125,27 +124,21 @@ def train(train_loader, model, w_optim, epoch, writer, device, config, logger, c
         trn_y = reshape(trn_y)
         N = trn_X.size(0)
 
-        print("Shape:", trn_X.size())
-        print("Shape:", trn_y.size())
-
         logits_w = model(trn_X)
-        print("Shape:", logits_w.size())
-
         loss = model.loss(logits_w, trn_y)
         w_grads = torch.autograd.grad(loss, w_optim.params())
         w_optim.step(w_grads)
 
-        prec1, prec5 = model.iou(logits_w, trn_y, (1, 5))
+        batch_iou = model.iou(logits_w, trn_y)
         losses.update(loss.item(), N)
-        top1.update(prec1.item(), N)
-        top5.update(prec5.item(), N)
+        iou.update(batch_iou, N)
 
         if step % config.print_freq == 0 or step == len(train_loader)-1:
             logger.info(
                 "Train: [{:2d}/{}] Step {:03d}/{:03d} Loss {losses.avg:.3f} "
-                "Prec@(1,5) ({top1.avg:.1%}, {top5.avg:.1%})".format(
+                "iou {iou.avg:.1%}".format(
                     epoch+1, config.epochs, step, len(train_loader)-1, losses=losses,
-                    top1=top1, top5=top5))
+                    iou=iou))
 
         #assumes one lr and wd value
         for group in w_optim.param_groups:
@@ -157,18 +150,16 @@ def train(train_loader, model, w_optim, epoch, writer, device, config, logger, c
         writer.add_scalar('train/lr', lr, cur_step)
         writer.add_scalar('train/wd', wd, cur_step)
         writer.add_scalar('train/loss', loss.item(), cur_step)
-        writer.add_scalar('train/top1', prec1.item(), cur_step)
-        writer.add_scalar('train/top5', prec5.item(), cur_step)
+        writer.add_scalar('train/iou', batch_iou, cur_step)
 
         cur_step += 1
 
-    logger.info("Train: [{:2d}/{}] Final Prec@1 {:.4%}".format(epoch+1, config.epochs, top1.avg))
+    logger.info("Train: [{:2d}/{}] Final Prec@1 {:.4%}".format(epoch+1, config.epochs, iou.avg))
 
     return cur_step
 
 def validate(valid_loader, model, epoch, cur_step, writer, device, config, logger):
-    top1 = utils.AverageMeter()
-    top5 = utils.AverageMeter()
+    iou = utils.AverageMeter()
     losses = utils.AverageMeter()
 
     model.eval()
@@ -190,15 +181,14 @@ def validate(valid_loader, model, epoch, cur_step, writer, device, config, logge
             if step % config.print_freq == 0 or step == len(valid_loader)-1:
                 logger.info(
                     "Valid: [{:2d}/{}] Step {:03d}/{:03d} Loss {losses.avg:.3f} "
-                    "Prec@(1,5) ({top1.avg:.1%}, {top5.avg:.1%})".format(
+                    "iou {iou.avg:.1%}".format(
                         epoch+1, config.epochs, step, len(valid_loader)-1, losses=losses,
-                        top1=top1, top5=top5))
+                        iou=iou))
 
     writer.add_scalar('val/loss', losses.avg, cur_step)
-    writer.add_scalar('val/top1', top1.avg, cur_step)
-    writer.add_scalar('val/top5', top5.avg, cur_step)
+    writer.add_scalar('val/iou', iou.avg, cur_step)
 
-    logger.info("Valid: [{:2d}/{}] Final Prec@1 {:.4%}".format(epoch+1, config.epochs, top1.avg))
+    logger.info("Valid: [{:2d}/{}] Final iou {:.4%}".format(epoch+1, config.epochs, iou.avg))
 
     return top1.avg
 
