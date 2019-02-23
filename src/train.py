@@ -9,6 +9,7 @@ from optim.adam import Adam
 import shutil
 import copy
 from models.unet.unet_model import UNet
+from matplotlib import pyplot as plt
 
 def start_run():
     config = Config()
@@ -118,7 +119,7 @@ def train(train_loader, model, w_optim, epoch, writer, device, config, logger, c
 
         trn_d = trn_d.to(device, non_blocking=True)
         trn_X = trn_d[:,0]
-        trn_y = trn_d[:,1]
+        trn_y = trn_d[:,1] * 255.
         reshape = lambda x : x.reshape(x.size(0), 1, x.size(1), x.size(2))
         trn_X = reshape(trn_X)
         trn_y = reshape(trn_y)
@@ -128,6 +129,17 @@ def train(train_loader, model, w_optim, epoch, writer, device, config, logger, c
         loss = model.loss(logits_w, trn_y)
         w_grads = torch.autograd.grad(loss, w_optim.params())
         w_optim.step(w_grads)
+
+        if cur_step > 100:
+            print("targ max:", trn_y[3].detach().cpu().numpy().max())
+            print("targ min:", trn_y[3].detach().cpu().numpy().min())
+            print("out max:", logits_w[3].detach().cpu().numpy().max())
+            print("out min:", logits_w[3].detach().cpu().numpy().min())
+            print("shape:", logits_w[3].detach().cpu().numpy().shape)
+            plt.imshow(np.squeeze(logits_w[3].detach().cpu().numpy()))
+            plt.savefig('test_out_{}'.format(cur_step))
+            plt.imshow(np.squeeze(trn_y[3].detach().cpu().numpy()))
+            plt.savefig('test_target_{}'.format(cur_step))
 
         batch_iou = model.iou(logits_w, trn_y)
         losses.update(loss.item(), N)
