@@ -60,6 +60,7 @@ Best IOU: 70%
 ![prediction](out_0_percent/test_out_0.png)
 
 ![actual](out_0_percent/test_true_0.png)
+
 20% mouse data:
 
 Best IOU: 82%
@@ -67,13 +68,14 @@ Best IOU: 82%
 ![prediction](out_20_percent/test_out_0.png)
 
 ![actual](out_20_percent/test_true_0.png)
+
 40% mouse data:
 
 Best IOU: 83%
 
-![prediction](out_20_percent/test_out_0.png)
+![prediction](out_40_percent/test_out_0.png)
 
-![actual](out_20_percent/test_true_0.png)
+![actual](out_40_percent/test_true_0.png)
 
 ## Discussion
 
