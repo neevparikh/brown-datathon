@@ -100,13 +100,14 @@ def start_run():
             # validation
             total_iou = validate(valid_loader, model, epoch, cur_step, writer, device, config, logger)
 
-        saves = ['checkpoint']
-        is_best = best_iou < total_iou
-        # save
-        if is_best:
-            best_iou = iou
-            saves.append('best')
-        utils.save_item(model, config.path, saves)
+            saves = ['checkpoint']
+            is_best = best_iou < total_iou
+            # save
+            if is_best:
+                best_iou = iou
+                saves.append('best')
+            utils.save_item(model, config.path, saves)
+
         print("")
 
     logger.info("Final best iou = {:.4%}".format(best_iou))
