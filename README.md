@@ -38,8 +38,7 @@ Then, in order not to have blank space as a result of these transformation, we r
 As a baseline model, we adopted U-Net, which is characterized with encoder and decoder architecture, because this model is proven to be work well with biological images. 
 The Intersection of Union metric was used to evaluate performance.
 
-<img src = 'https://www.google.com/url?sa=i&source=images&cd=&ved=2ahUKEwiRn8_3z9TgAhUHJt8KHRNWA9EQjRx6BAgBEAU&url=https%3A%2F%2Fchatbotslife.com%2Fsmall-u-net-for-vehicle-detection-9eec216f9fd6&psig=AOvVaw0jyiZpwfc84_UmY9V5qKkV&ust=1551106435677334'>
-
+![UNet](u-net-architecture.png)
 
 In order to improve the performance we incorporated couple of changes below.
 
