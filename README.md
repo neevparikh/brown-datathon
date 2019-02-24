@@ -46,11 +46,11 @@ In order to improve the performance we incorporated couple of changes below.
 
 * Modified the encoder to Deep Residual Pyramid Net
 * incorporated spatial and channelwise squeeze and excitation block
-* optional: shakedrop regularization technique to see if it generalizes well
+* optional: ShakeDrop regularization technique to see if it generalizes well
 
 ## Result
 
-The provided fruit fly data doesn't allow for effective generalization to the mouse data with this model. This was verified by training the model with different percentages of the mouse used as training data (and not used as validation data). Results including randomly selected samples can be seen below.
+The provided fruit fly data doesn't allow for effective generalization to the mouse data with this model. This was verified by training the model with different percentages of the mouse used as training data (and not used as validation data). Results including randomly selected samples can be seen below. ShakeDrop regularization reduced performance.
 
 Only fruit fly data:
 
