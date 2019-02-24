@@ -54,5 +54,6 @@ def data_transforms():
     train_general_transform = transforms.Compose(get_augment(general_aug))
     train_img_transform = transforms.Compose(get_augment(image_specific))
     norm_transform = transforms.Compose(all_transf + normalize)
+    val_transform = transforms.Compose(normalize)
 
-    return train_general_transform, train_img_transform, norm_transform
+    return train_general_transform, train_img_transform, norm_transform, val_transform

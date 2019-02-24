@@ -48,7 +48,7 @@ def start_run():
     torch.backends.cudnn.benchmark = True
 
     #TODO: fix folds/cv
-    data_params, train_data = utils.get_data()
+    data_params, train_data, valid_data = utils.get_data()
 
     model = UNet(config.total_channels_to_add, data_params['num_classes'], data_params['input_channels'],
             config.shake_drop, not config.no_scse, config.num_downsamples, config.num_blocks_per_downsample)
@@ -62,11 +62,11 @@ def start_run():
                                                shuffle=True,
                                                num_workers=config.workers,
                                                pin_memory=True)
-    # valid_loader = torch.utils.data.DataLoader(valid_data,
-    #                                            batch_size=config.batch_size,
-    #                                            shuffle=False,
-    #                                            num_workers=config.workers,
-    #                                            pin_memory=True)
+    valid_loader = torch.utils.data.DataLoader(valid_data,
+                                               batch_size=config.batch_size,
+                                               shuffle=False,
+                                               num_workers=config.workers,
+                                               pin_memory=True)
 
     nb_iters_train = config.epochs * len(train_loader)
 
@@ -96,18 +96,18 @@ def start_run():
         cur_step = train(train_loader, model, w_optim, epoch, writer, device, config, logger, cur_step)
 
         # validation
-        #total_iou = validate(valid_loader, model, epoch, cur_step, writer, device, config, logger)
+        total_iou = validate(valid_loader, model, epoch, cur_step, writer, device, config, logger)
 
         saves = ['checkpoint']
-        #is_best = best_iou < total_iou
-        ## save
-        #if is_best:
-        #    best_iou = iou
-        #    saves.append('best')
+        is_best = best_iou < total_iou
+        # save
+        if is_best:
+            best_iou = iou
+            saves.append('best')
         utils.save_item(model, config.path, saves)
         print("")
 
-    #logger.info("Final best iou = {:.4%}".format(best_iou))
+    logger.info("Final best iou = {:.4%}".format(best_iou))
 
 def train(train_loader, model, w_optim, epoch, writer, device, config, logger, cur_step):
     iou = utils.AverageMeter()
@@ -130,17 +130,6 @@ def train(train_loader, model, w_optim, epoch, writer, device, config, logger, c
         loss = model.loss(logits_w, trn_y)
         w_grads = torch.autograd.grad(loss, w_optim.params())
         w_optim.step(w_grads)
-
-        if cur_step > 100:
-            print("targ max:", trn_y[3].detach().cpu().numpy().max())
-            print("targ min:", trn_y[3].detach().cpu().numpy().min())
-            print("out max:", logits_w[3].detach().cpu().numpy().max())
-            print("out min:", logits_w[3].detach().cpu().numpy().min())
-            print("shape:", logits_w[3].detach().cpu().numpy().shape)
-            plt.imshow(np.squeeze(logits_w[3].detach().cpu().numpy()))
-            plt.savefig('test_out_{}'.format(cur_step))
-            plt.imshow(np.squeeze(trn_y[3].detach().cpu().numpy()))
-            plt.savefig('test_target_{}'.format(cur_step))
 
         batch_iou = model.iou(logits_w, trn_y)
         losses.update(loss.item(), N)

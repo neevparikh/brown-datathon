@@ -49,9 +49,11 @@ class NeuronDataset(Dataset):
         return img_label
 
 def get_data():
-    train_general_transform, train_img_transform, norm_transform = preproc.data_transforms()
+    train_general_transform, train_img_transform, norm_transform, val_transform = preproc.data_transforms()
     trn_data = NeuronDataset(root_dir=train_root_dir, transform_norm=norm_transform, 
             transform_img=train_img_transform, transform_both=train_general_transform)
+
+    val_data = NeuronDataset(root_dir=test_root_dir, transform_norm=val_transform) 
 
     #shape is HW or HWC
     shape = trn_data.shape
@@ -60,7 +62,7 @@ def get_data():
     input_size = shape[0]
 
     return [{'input_size': input_size, 'input_channels': input_channels, 'num_classes': 1}, 
-            trn_data]
+            trn_data, val_data]
 
 def get_logger(file_path):
     """ Make python logger """
