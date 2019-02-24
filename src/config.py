@@ -65,5 +65,5 @@ class Config(argparse.Namespace):
         args = parser.parse_args()
         super().__init__(**vars(args))
 
-        self.data_path = os.path.join('..', '..', 'data')
-        self.path = os.path.join('..', '..', 'training_logs', self.name)
+        self.data_path = os.path.join('data')
+        self.path = os.path.join('training_logs', self.name)
