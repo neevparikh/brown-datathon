@@ -14,6 +14,6 @@ def display_images(loader, nb_imgs):
         plt.show()
 
 if __name__ == '__main__':
-    _, loader = utils.get_data()
+    _, _ , loader= utils.get_data()
     nb_imgs = 15
     display_images(loader, nb_imgs)

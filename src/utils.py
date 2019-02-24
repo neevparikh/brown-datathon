@@ -54,7 +54,7 @@ class NeuronDataset(Dataset):
         img = self.samples[i][0][index]
         label = self.samples[i][1][index]
         if self.transform_both:
-            img_label = np.array(self.transform_both(np.stack((img, label), axis=-1)))
+            img_label = np.array(self.transform_both(Image.fromarray(np.stack((img, label), axis=-1))))
             img = Image.fromarray(img_label[:,:,0])
             label = Image.fromarray(img_label[:,:,1])
         if self.transform_img:

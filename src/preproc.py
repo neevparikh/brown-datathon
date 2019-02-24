@@ -38,8 +38,11 @@ def data_transforms():
             RandomBrightness(),
             ], p=0.3)
         ])
+    all_transf_pre = [
+            transforms.RandomCrop(round(1.2 * img_size))
+            ]
 
-    all_transf = [
+    all_transf_after = [
             transforms.RandomCrop(img_size)
             ]
     normalize = [
@@ -51,9 +54,9 @@ def data_transforms():
             return Image.fromarray(aug(image=np.array(image))['image'])
         return [augment]
 
-    train_general_transform = transforms.Compose(get_augment(general_aug))
+    train_general_transform = transforms.Compose(all_transf_pre + get_augment(general_aug))
     train_img_transform = transforms.Compose(get_augment(image_specific))
-    norm_transform = transforms.Compose(all_transf + normalize)
+    norm_transform = transforms.Compose(all_transf_after + normalize)
     val_transform = transforms.Compose(normalize)
 
     return train_general_transform, train_img_transform, norm_transform, val_transform
