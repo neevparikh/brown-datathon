@@ -104,7 +104,7 @@ def start_run():
             is_best = best_iou < total_iou
             # save
             if is_best:
-                best_iou = iou
+                best_iou = total_iou
                 saves.append('best')
             utils.save_item(model, config.path, saves)
 
