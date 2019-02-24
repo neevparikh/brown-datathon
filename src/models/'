@@ -45,6 +45,8 @@ class Config(argparse.Namespace):
                 help='num of times to downsample for unet')
         parser.add_argument('--num_blocks_per_downsample', type=int, default=2,
                 help='num blocks per each downsample in unet')
+        parser.add_argument('--num_blocks_per_upsample', type=int, default=2,
+                help='num blocks per each upsample in unet')
         parser.add_argument('--shake_drop', action='store_true', default=False, 
                 help='use shake drop')
         parser.add_argument('--no_scse', action='store_true', default=False, 

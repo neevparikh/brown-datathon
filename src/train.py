@@ -8,7 +8,7 @@ import utils
 from optim.adam import Adam
 import shutil
 import copy
-from models.unet.unet_model import UNet
+from models.scse_pyramid_unet import UNet
 from matplotlib import pyplot as plt
 
 def start_run():
@@ -50,7 +50,8 @@ def start_run():
     #TODO: fix folds/cv
     data_params, train_data = utils.get_data()
 
-    model = UNet(data_params['input_channels'], data_params['num_classes'])
+    model = UNet(config.total_channels_to_add, data_params['num_classes'], data_params['input_channels'],
+            config.shake_drop, not config.no_scse, config.num_downsamples, config.num_blocks_per_downsample)
 
     model = model.to(device)
 
