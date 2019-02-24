@@ -41,7 +41,7 @@ class Config(argparse.Namespace):
         parser.add_argument('--w_weight_decay', type=float, default=3e-1)
         parser.add_argument('--w_weight_decay_end', type=float, default=3e-4,
                 help='final weight decay, only used for wd finder')
-        parser.add_argument('--total_channels_to_add', type=int, default=100,
+        parser.add_argument('--total_channels_to_add', type=int, default=84,
                 help='# of channels to add to net in total')
         parser.add_argument('--num_downsamples', type=int, default=4,
                 help='num of times to downsample for unet')

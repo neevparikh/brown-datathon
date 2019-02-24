@@ -12,33 +12,47 @@ import dill
 
 data_path = os.path.join('data')
 train_root_dir = os.path.join(data_path, 'train')
-test_root_dir = os.path.join(data_path, 'test')
+val_root_dir = os.path.join(data_path, 'test')
 blacklist = defaultdict(list)
 blacklist[os.path.join(train_root_dir, 'fruit_fly_volumes.npz')] = [14, 74]
 
 
-class NeuronDataset(Dataset):
-    def __init__(self, root_dir, transform_norm, transform_img=None, transform_both=None):
-        self.samples = []
-        for path in list(map(lambda f : os.path.join(root_dir, f), os.listdir(root_dir))):
-            data = np.load(path)
-            d_blacklist = blacklist[path]
-            for i in range(data['volume'].shape[0]):
-                if i not in d_blacklist:
-                    self.samples.append((data, i))
+train_samples = []
+for path in list(map(lambda f : os.path.join(train_root_dir, f), os.listdir(train_root_dir))):
+    data = np.load(path)
+    data_vol = data['volume']
+    data_label = data['label']
+    d_blacklist = blacklist[path]
+    for i in range(data_vol.shape[0]):
+        if i not in d_blacklist:
+            train_samples.append((data_vol, data_label, i))
 
+
+val_samples = []
+for path in list(map(lambda f : os.path.join(val_root_dir, f), os.listdir(val_root_dir))):
+    data = np.load(path)
+    data_vol = data['volume']
+    data_label = data['label']
+    d_blacklist = blacklist[path]
+    for i in range(data_vol.shape[0]):
+        if i not in d_blacklist:
+            val_samples.append((data_vol, data_label, i))
+
+class NeuronDataset(Dataset):
+    def __init__(self, samples, transform_norm, transform_img=None, transform_both=None):
         self.transform_img = transform_img
         self.transform_both = transform_both
         self.transform_norm = transform_norm
         self.shape = (preproc.img_size, preproc.img_size)
+        self.samples = samples
     
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, i):
-        index = self.samples[i][1]
-        img = self.samples[i][0]['volume'][index]
-        label = self.samples[i][0]['label'][index]
+        index = self.samples[i][2]
+        img = self.samples[i][0][index]
+        label = self.samples[i][1][index]
         if self.transform_both:
             img_label = np.array(self.transform_both(np.stack((img, label), axis=-1)))
             img = Image.fromarray(img_label[:,:,0])
@@ -50,10 +64,10 @@ class NeuronDataset(Dataset):
 
 def get_data():
     train_general_transform, train_img_transform, norm_transform, val_transform = preproc.data_transforms()
-    trn_data = NeuronDataset(root_dir=train_root_dir, transform_norm=norm_transform, 
+    trn_data = NeuronDataset(train_samples, transform_norm=norm_transform, 
             transform_img=train_img_transform, transform_both=train_general_transform)
 
-    val_data = NeuronDataset(root_dir=test_root_dir, transform_norm=val_transform) 
+    val_data = NeuronDataset(val_samples, transform_norm=val_transform) 
 
     #shape is HW or HWC
     shape = trn_data.shape

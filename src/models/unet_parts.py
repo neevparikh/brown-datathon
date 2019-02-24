@@ -26,21 +26,18 @@ class double_conv(nn.Module):
 
 class pyramid_bottleneck(nn.Module):
     '''(conv => BN => ReLU) * 2'''
-    def __init__(self, in_ch, out_ch, downsampled, out_channel_ratio=4., use_scse=True, scse_ratio=8,
+    def __init__(self, in_ch, out_ch, downsampled, use_scse=True, scse_ratio=8,
             use_shake_drop=False, p_shakedrop=1.):
         super().__init__()
         stride = 2 if downsampled else 1
-        seq = [nn.BatchNorm2d(in_ch * out_channel_ratio),
-               nn.Conv2d(in_ch * out_channel_ratio, out_ch, 1, padding=0, stride=1, bias=False),
+        seq = [nn.BatchNorm2d(in_ch),
+               nn.Conv2d(in_ch, out_ch, 3, padding=1, stride=stride, bias=False),
                nn.BatchNorm2d(out_ch),
                nn.ReLU(inplace=True),
-               nn.Conv2d(out_ch, out_ch, 3, padding=1, stride=stride, bias=False),
-               nn.BatchNorm2d(out_ch),
-               nn.ReLU(inplace=True),
-               nn.Conv2d(out_ch, out_ch * out_channel_ratio, 1, padding=0, stride=1, bias=False),
-               nn.BatchNorm2d(out_ch * out_channel_ratio)]
+               nn.Conv2d(out_ch, out_ch, 3, padding=1, stride=1, bias=False),
+               nn.BatchNorm2d(out_ch)]
         if use_scse:
-            seq.append(SCSE(out_ch * out_channel_ratio, scse_ratio))
+            seq.append(SCSE(out_ch, scse_ratio))
 
         self.branch = nn.Sequential(*seq)
 
@@ -66,14 +63,14 @@ class pyramid_bottleneck(nn.Module):
         return h + h0
 
 class down(nn.Module):
-    def __init__(self, in_ch, out_chs, p_shakedrops, out_channel_ratio=4., use_scse=True, scse_ratio=8, 
+    def __init__(self, in_ch, out_chs, p_shakedrops, use_scse=True, scse_ratio=8, 
             use_shake_drop=False):
         super(down, self).__init__()
         bottlenecks = []
         assert len(out_chs) == len(p_shakedrops)
 
         for out_ch, p_shakedrop in zip(out_chs, p_shakedrops):
-            bottlenecks.append(pyramid_bottleneck(in_ch, out_ch, out_ch == out_chs[-1], out_channel_ratio, 
+            bottlenecks.append(pyramid_bottleneck(in_ch, out_ch, out_ch == out_chs[-1],
             use_scse, scse_ratio, use_shake_drop, p_shakedrop))
             in_ch = out_ch
 
@@ -93,7 +90,7 @@ class up(nn.Module):
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         else:
-            self.up = nn.ConvTranspose2d(in_ch * out_channel_ratio, in_ch * out_channel_ratio, 2, stride=2)
+            self.up = nn.ConvTranspose2d(in_ch, in_ch, 2, stride=2)
 
         self.net = double_conv(in_ch, out_ch, use_scse, scse_ratio)
 

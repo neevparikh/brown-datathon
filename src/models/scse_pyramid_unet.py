@@ -17,17 +17,17 @@ class UNet(nn.Module):
         n_units = num_downsamples * num_blocks_per_downsample
         add_rate = alpha / n_units
         p_add_rate = 0.5 / n_units
-        out_channel_ratio = 4
+        head_channel_ratio = 4
         scse_ratio = 8
 
         p = 1.
 
         self.head = nn.Sequential(
-                nn.Conv2d(input_channels, in_ch * out_channel_ratio, 3, padding=1, stride=1, bias=False),
-                nn.BatchNorm2d(in_ch * out_channel_ratio),
+                nn.Conv2d(input_channels, in_ch * head_channel_ratio, 3, padding=1, stride=1, bias=False),
+                nn.BatchNorm2d(in_ch * head_channel_ratio),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(in_ch * out_channel_ratio, in_ch * out_channel_ratio, 3, padding=1, stride=1, bias=False),
-                nn.BatchNorm2d(in_ch * out_channel_ratio),
+                nn.Conv2d(in_ch * head_channel_ratio, in_ch, 3, padding=1, stride=1, bias=False),
+                nn.BatchNorm2d(in_ch),
                 nn.ReLU(inplace=True))
 
         self.down_blocks = nn.ModuleList()
@@ -45,7 +45,7 @@ class UNet(nn.Module):
                 p_shakedrops.append(p)
                 p -= p_add_rate
 
-            self.down_blocks.append(down(round(in_ch), out_chs, p_shakedrops, out_channel_ratio, use_scse, 
+            self.down_blocks.append(down(round(in_ch), out_chs, p_shakedrops, use_scse, 
                 scse_ratio, use_shake_drop))
 
             in_ch = next_ch
@@ -54,11 +54,6 @@ class UNet(nn.Module):
         assert abs(p - 0.5) < 1e-5
 
         self.up_blocks = nn.ModuleList()
-
-        self.transition = nn.Sequential(nn.BatchNorm2d(round(in_ch) * out_channel_ratio),
-                nn.Conv2d(round(in_ch) * out_channel_ratio, round(in_ch), 1, padding=0, stride=1, bias=False),
-                nn.BatchNorm2d(round(in_ch)),
-                nn.ReLU(inplace=True))
 
         n_units = num_downsamples
         add_rate = alpha / n_units
@@ -69,13 +64,13 @@ class UNet(nn.Module):
             next_ch = in_ch 
             next_ch -= add_rate 
 
-            self.up_blocks.append(up(round(in_ch) + out_channel_ratio * down_chs[-i -1], round(next_ch), 
+            self.up_blocks.append(up(round(in_ch) + down_chs[-i -1], round(next_ch), 
                 True, use_scse, scse_ratio))
             in_ch = next_ch
 
         assert init_ch == in_ch 
 
-        self.end = nn.Conv2d(round(in_ch), 1, 1)
+        self.end = nn.Conv2d(round(in_ch), classes, 1)
         
 
         # Initialize paramters
@@ -97,8 +92,6 @@ class UNet(nn.Module):
         for block in self.down_blocks:
             down_x.append(x)
             x = block(x)
-
-        x = self.transition(x)
 
         assert len(self.up_blocks) == len(down_x)
 
