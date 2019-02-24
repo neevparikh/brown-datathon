@@ -167,7 +167,10 @@ def validate(valid_loader, model, epoch, cur_step, writer, device, config, logge
     model.eval()
 
     with torch.no_grad():
-        for step, (X, y) in enumerate(valid_loader):
+        for step, trn_d in enumerate(valid_loader):
+            trn_d = trn_d.to(device, non_blocking=True)
+            trn_X = trn_d[:,0]
+            trn_y = trn_d[:,1] * 255.
             X, y = X.to(device, non_blocking=True), y.to(device, non_blocking=True)
             N = X.size(0)
 
@@ -175,10 +178,9 @@ def validate(valid_loader, model, epoch, cur_step, writer, device, config, logge
 
             loss = model.loss(logits, y)
 
-            prec1, prec5 = model.top_k(logits, y, (1, 5))
+            batch_iou = model.iou(logits_w, trn_y)
             losses.update(loss.item(), N)
-            top1.update(prec1.item(), N)
-            top5.update(prec5.item(), N)
+            iou.update(batch_iou, N)
 
             if step % config.print_freq == 0 or step == len(valid_loader)-1:
                 logger.info(
