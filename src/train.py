@@ -93,10 +93,12 @@ def start_run():
 
     # training loop
     for epoch in range(config.epochs):
+
         cur_step = train(train_loader, model, w_optim, epoch, writer, device, config, logger, cur_step)
 
-        # validation
-        total_iou = validate(valid_loader, model, epoch, cur_step, writer, device, config, logger)
+        if (epoch + 1) % config.val_freq == 0:
+            # validation
+            total_iou = validate(valid_loader, model, epoch, cur_step, writer, device, config, logger)
 
         saves = ['checkpoint']
         is_best = best_iou < total_iou
@@ -169,16 +171,18 @@ def validate(valid_loader, model, epoch, cur_step, writer, device, config, logge
     with torch.no_grad():
         for step, trn_d in enumerate(valid_loader):
             trn_d = trn_d.to(device, non_blocking=True)
-            trn_X = trn_d[:,0]
-            trn_y = trn_d[:,1] * 255.
-            X, y = X.to(device, non_blocking=True), y.to(device, non_blocking=True)
+            X = trn_d[:,0]
+            y = trn_d[:,1] * 255.
+            reshape = lambda x : x.reshape(x.size(0), 1, x.size(1), x.size(2))
+            X = reshape(X)
+            y = reshape(y)
             N = X.size(0)
 
             logits = model(X)
 
             loss = model.loss(logits, y)
 
-            batch_iou = model.iou(logits_w, trn_y)
+            batch_iou = model.iou(logits, y)
             losses.update(loss.item(), N)
             iou.update(batch_iou, N)
 
@@ -189,12 +193,14 @@ def validate(valid_loader, model, epoch, cur_step, writer, device, config, logge
                         epoch+1, config.epochs, step, len(valid_loader)-1, losses=losses,
                         iou=iou))
 
+            break
+
     writer.add_scalar('val/loss', losses.avg, cur_step)
     writer.add_scalar('val/iou', iou.avg, cur_step)
 
     logger.info("Valid: [{:2d}/{}] Final iou {:.4%}".format(epoch+1, config.epochs, iou.avg))
 
-    return top1.avg
+    return iou.avg
 
 if __name__ == '__main__':
     start_run()

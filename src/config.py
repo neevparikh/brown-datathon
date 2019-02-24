@@ -23,6 +23,8 @@ class Config(argparse.Namespace):
         parser.add_argument('--batch_size', type=int, default=64)
         parser.add_argument('--print_freq', type=int, default=50,
                 help='print frequency')
+        parser.add_argument('--val_freq', type=int, default=10,
+                help='validation frequency')
         parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
         parser.add_argument('--epochs', type=int, default=50,
                 help='# of training epochs')
