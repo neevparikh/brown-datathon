@@ -1,4 +1,4 @@
-# U-Net with state of the art encoder and decoder
+# U-Net with advanced encoder and decoder
 
 ## Task
 
@@ -36,19 +36,51 @@ Then, in order not to have blank space as a result of these transformation, we r
 ## Model
 
 As a baseline model, we adopted U-Net, which is characterized with encoder and decoder architecture, because this model is proven to be work well with biological images. 
+The Intersection of Union metric was used to evaluate performance.
 
-<img src = 'https://www.google.com/url?sa=i&source=images&cd=&ved=2ahUKEwiRn8_3z9TgAhUHJt8KHRNWA9EQjRx6BAgBEAU&url=https%3A%2F%2Fchatbotslife.com%2Fsmall-u-net-for-vehicle-detection-9eec216f9fd6&psig=AOvVaw0jyiZpwfc84_UmY9V5qKkV&ust=1551106435677334'>
-
+![UNet](u-net-architecture.png)
 
 In order to improve the performance we incorporated couple of changes below.
 
 
 
 * Modified the encoder to Deep Residual Pyramid Net
-* incorporated spatial and channelwise squeeze and excitation block at the end of block of u-net
-* optional: shakedrop regularization technique to see if it generalizes well
+* incorporated spatial and channelwise squeeze and excitation block
+* optional: ShakeDrop regularization technique to see if it generalizes well
 
 ## Result
+
+The provided fruit fly data doesn't allow for effective generalization to the mouse data with this model. This was verified by training the model with different percentages of the mouse used as training data (and not used as validation data). Results including randomly selected samples can be seen below. ShakeDrop regularization reduced performance.
+
+Only fruit fly data:
+
+Best IOU: 70%
+
+Prediction:
+![prediction](out_0_percent/test_out_0.png)
+
+True:
+![actual](out_0_percent/test_true_0.png)
+
+20% mouse data:
+
+Best IOU: 82%
+
+Prediction:
+![prediction](out_20_percent/test_out_0.png)
+
+True:
+![actual](out_20_percent/test_true_0.png)
+
+40% mouse data:
+
+Best IOU: 83%
+
+Prediction:
+![prediction](out_40_percent/test_out_0.png)
+
+True:
+![actual](out_40_percent/test_true_0.png)
 
 ## Discussion
 
