@@ -48,7 +48,7 @@ def start_run():
     torch.backends.cudnn.benchmark = True
 
     #TODO: fix folds/cv
-    data_params, train_data, valid_data = utils.get_data()
+    data_params, train_data, valid_data = utils.get_data(config.prop_mouse_data_to_use)
 
     model = UNet(config.total_channels_to_add, data_params['num_classes'], data_params['input_channels'],
             config.shake_drop, not config.no_scse, config.num_downsamples, config.num_blocks_per_downsample)
@@ -62,6 +62,7 @@ def start_run():
                                                shuffle=True,
                                                num_workers=config.workers,
                                                pin_memory=True)
+
     valid_loader = torch.utils.data.DataLoader(valid_data,
                                                batch_size=config.batch_size,
                                                shuffle=False,
@@ -187,14 +188,20 @@ def validate(valid_loader, model, epoch, cur_step, writer, device, config, logge
             losses.update(loss.item(), N)
             iou.update(batch_iou, N)
 
+            test_out = np.squeeze(logits[0].detach().cpu().numpy())
+            test_true = np.squeeze(y[0].detach().cpu().numpy())
+            plt.gray()
+            plt.imshow(test_out)
+            plt.savefig('test_out_{}'.format(step))
+            plt.imshow(test_true)
+            plt.savefig('test_true_{}'.format(step))
+
             if step % config.print_freq == 0 or step == len(valid_loader)-1:
                 logger.info(
                     "Valid: [{:2d}/{}] Step {:03d}/{:03d} Loss {losses.avg:.3f} "
                     "iou {iou.avg:.1%}".format(
                         epoch+1, config.epochs, step, len(valid_loader)-1, losses=losses,
                         iou=iou))
-
-            break
 
     writer.add_scalar('val/loss', losses.avg, cur_step)
     writer.add_scalar('val/iou', iou.avg, cur_step)

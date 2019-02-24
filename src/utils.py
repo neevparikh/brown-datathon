@@ -27,7 +27,6 @@ for path in list(map(lambda f : os.path.join(train_root_dir, f), os.listdir(trai
         if i not in d_blacklist:
             train_samples.append((data_vol, data_label, i))
 
-
 val_samples = []
 for path in list(map(lambda f : os.path.join(val_root_dir, f), os.listdir(val_root_dir))):
     data = np.load(path)
@@ -62,12 +61,21 @@ class NeuronDataset(Dataset):
         img_label = self.transform_norm(Image.fromarray(np.stack((img, label), axis=-1)))
         return img_label
 
-def get_data():
+def get_data(prop_mouse_data_to_use):
     train_general_transform, train_img_transform, norm_transform, val_transform = preproc.data_transforms()
+
     trn_data = NeuronDataset(train_samples, transform_norm=norm_transform, 
             transform_img=train_img_transform, transform_both=train_general_transform)
 
-    val_data = NeuronDataset(val_samples, transform_norm=val_transform) 
+    cut_point = round(prop_mouse_data_to_use * len(val_samples))
+    new_train_samples = train_samples + val_samples[:cut_point]
+    new_val_samples = val_samples[cut_point:]
+
+    val_data = NeuronDataset(new_val_samples, transform_norm=val_transform) 
+
+
+    trn_data = NeuronDataset(new_train_samples, transform_norm=norm_transform, 
+            transform_img=train_img_transform, transform_both=train_general_transform)
 
     #shape is HW or HWC
     shape = trn_data.shape
@@ -175,6 +183,3 @@ class PiecewiseLinearOrCos(namedtuple('PiecewiseLinear', ('knots', 'vals', 'is_c
             return math.cos((t-c)*math.pi/(c-d))*(a-b)/2.+(b-a)/2+a
         else:    
             return np.interp([t], self.knots, self.vals)[0]
-
-if __name__ == '__main__':
-    get_image_stats_scene(7)

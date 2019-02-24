@@ -26,9 +26,9 @@ def data_transforms():
         ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.2, rotate_limit=15, p=.2),
         OneOf([
             OpticalDistortion(p=0.2),
-            GridDistortion(distort_limit=0.1, p=.1),
-            IAAPiecewiseAffine(p=0.2),
-            ], p=0.2)
+            GridDistortion(distort_limit=0.2, p=.1),
+            ElasticTransform(),
+            ], p=1.)
         ], p=1)
     image_specific = Compose([
         OneOf([
@@ -54,8 +54,16 @@ def data_transforms():
             return Image.fromarray(aug(image=np.array(image))['image'])
         return [augment]
 
+    def normalize_to_full_image(img):
+        return img
+        #img = np.array(img).astype(np.float32)
+        #img -= img.min()
+        #img /= img.max()
+        #img *= 255
+        #return img.astype(np.uint8)
+
     train_general_transform = transforms.Compose(all_transf_pre + get_augment(general_aug))
-    train_img_transform = transforms.Compose(get_augment(image_specific))
+    train_img_transform = transforms.Compose(get_augment(image_specific) + [normalize_to_full_image])
     norm_transform = transforms.Compose(all_transf_after + normalize)
     val_transform = transforms.Compose(normalize)
 

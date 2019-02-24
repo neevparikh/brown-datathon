@@ -55,8 +55,7 @@ class Config(argparse.Namespace):
                 help='find lr using exp lr finder')
         parser.add_argument('--wd_finder', action='store_true', default=False, 
                 help='find wd using exp wd finder')
-        parser.add_argument('--fold', type=int, default=0,
-                help='which fold to use (0 - 4)')
+        parser.add_argument('--prop_mouse_data_to_use', type=float, default=0.)
 
         return parser
 
