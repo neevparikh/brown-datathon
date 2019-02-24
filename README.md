@@ -52,9 +52,16 @@ In order to improve the performance we incorporated couple of changes below.
 
 ## Discussion
 
-### relatively poor performance on test set
-While we have 
+While we have good result for training set, we did not see that the output on test images are good.
+This is presumably because the distribution of the dataset is so different.
 
-### Shakedrop
+Actually, we observed that when we included the test images in the training set, the performance improved dramatically.
 
-## Conclusion and future direction
+We tried to address this issue by incorporating further regularization techniques, suchg as shakedrop architecture.
+
+However, we did not observe significant improvement from there. 
+
+
+## Challenges and future direction
+The biggest challenge is the poor generalization.  
+
