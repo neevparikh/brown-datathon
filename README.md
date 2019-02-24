@@ -57,24 +57,30 @@ Only fruit fly data:
 
 Best IOU: 70%
 
+Prediction:
 ![prediction](out_0_percent/test_out_0.png)
 
+True:
 ![actual](out_0_percent/test_true_0.png)
 
 20% mouse data:
 
 Best IOU: 82%
 
+Prediction:
 ![prediction](out_20_percent/test_out_0.png)
 
+True:
 ![actual](out_20_percent/test_true_0.png)
 
 40% mouse data:
 
 Best IOU: 83%
 
+Prediction:
 ![prediction](out_40_percent/test_out_0.png)
 
+True:
 ![actual](out_40_percent/test_true_0.png)
 
 ## Discussion
